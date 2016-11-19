@@ -109,13 +109,12 @@ def detect(Source):
     long_detecting_cnt = 0
     total_time = 0
 
-    fullpath = os.getcwd() + '\\images'
-    names_img = os.listdir(fullpath)
+    fullpath = os.getcwd() + '\\images' # полный путь к директории с рекламой
+    names_img = os.listdir(fullpath) # список файлов и папок в каталоге с рекламой
     for name in names_img:
-        img_path = os.path.join(fullpath, name)
-        if os.path.isfile(img_path):
-            imgs.append(cv2.imread(img_path, 0))
-    #imgs.append(cv2.imread("images/cola.jpg", 0))
+        img_path = os.path.join(fullpath, name) # полный путь до файлов и папок в каталоге с рекламой
+        if os.path.isfile(img_path): # определение, является ли файлом
+            imgs.append(cv2.imread(img_path, 0)) # добавление изображений с рекламой в массив
     
     for i in imgs:
         k, d = detector.detectAndCompute(i, None)
