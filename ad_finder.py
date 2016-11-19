@@ -98,12 +98,13 @@ def detect(Source):
         cap = cv2.VideoCapture(0)
     else:
         cap = cv2.VideoCapture(Source)
-        
-    cap.set(3,960)
-    cap.set(4,540)
 
     count = 0
     ext = False
+    
+    cap.set(3,960)
+    cap.set(4,540)
+    
     while (not ext):
         ret, frame = cap.read()
         if (ret is not None) and (frame is not None):
@@ -119,6 +120,9 @@ def detect(Source):
                    print('Try to find match. Took %.03f sec.' % t.interval)
                    total_time += t.interval
                    long_detecting_cnt += 1
+        else:
+            print("Couldn't get input capture.")
+            ext = True
 
         pressed = cv2.waitKey(70) & 0xFF
         if ((pressed == ord('q')) or (pressed == ord('Q'))):
@@ -126,8 +130,8 @@ def detect(Source):
 
             #TODO - обработка нажатий клавиатуры
             
-
-    print("Total tries  %.i" % long_detecting_cnt)
-    print("Average time %.03f" % (total_time/long_detecting_cnt))
+    if long_detecting_cnt != 0:
+        print("Total tries  %.i" % long_detecting_cnt)
+        print("Average time %.03f" % (total_time/long_detecting_cnt))
     cap.release()
     cv2.destroyAllWindows()
