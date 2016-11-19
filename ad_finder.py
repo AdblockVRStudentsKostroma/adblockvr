@@ -9,6 +9,7 @@ imgs = [] # картинки с рекламой, которые нам надо
 seeds = [] # массив ключевых точек и дескрипторов
 detector = cv2.xfeatures2d.SIFT_create(1000) # инициализируем класс поиска ключевых точек
 matcher = cv2.BFMatcher() # поиск соответствия по брутфорс перебору
+width, height = 1280, 720
 
 # вспомогательный класс таймера, для подсчета сколько времени заняла нужная операция
 class Timer:    
@@ -96,15 +97,15 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
             img2 = img2 + (cv2.bitwise_and((blurred_image-img2), mask))
 
     # view params
-    width, height = 960, 540
     x_offset = 0
     y_offset = 0
 
+    height, width = img2.shape[:2]
 
     cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE) # запрет изменять размер окна
-    cv2.resizeWindow(win, 800, 600) # задание размера окна
+    cv2.resizeWindow(win, width, height) # задание размера окна
     font = cv2.FONT_HERSHEY_SIMPLEX # шрифт текста
-    cv2.putText(img2, 'Press Q to EXIT', (10,520), font, 1, (255,255,255), 2, cv2.LINE_AA) # кнопка для выхода
+    cv2.putText(img2, 'Press Q to EXIT', (10,40), font, 1, (255,255,255), 2, cv2.LINE_AA) # кнопка для выхода
     cv2.imshow(win, img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
@@ -179,8 +180,8 @@ def detect(Source):
     count = 0
     ext = False
     
-    cap.set(3,960)
-    cap.set(4,540)
+    cap.set(3,width)
+    cap.set(4,height)
     
     while (not ext):
         ret, frame = cap.read()
