@@ -77,8 +77,10 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
     x_offset = 0
     y_offset = 0
 
-    cv2.namedWindow(win, cv2.WND_PROP_FULLSCREEN)
-    cv2.setWindowProperty(win, cv2.WND_PROP_AUTOSIZE, cv2.WINDOW_AUTOSIZE)
+    #cv2.namedWindow(win, cv2.WND_PROP_FULLSCREEN)
+    #cv2.setWindowProperty(win, cv2.WND_PROP_AUTOSIZE, cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
+    cv2.resizeWindow(win, 800, 600)
     cv2.imshow(win, img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
