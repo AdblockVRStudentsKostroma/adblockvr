@@ -122,16 +122,18 @@ def detect(Source):
         seeds.append((k,d))
         #TODO: отображения проецнтов загрузки seeds     
     
-    if Source is None:
+    isCameraInput = Source is None
+    
+    if isCameraInput:
         cap = cv2.VideoCapture(0) # захват видеопотока с камеры
     else:
         cap = cv2.VideoCapture(Source) # захват видеопотока с файла
-        
-    cap.set(3,960)
-    cap.set(4,540)
 
     count = 0
     ext = False
+    
+    cap.set(3,960)
+    cap.set(4,540)
     
     while (not ext):
         ret, frame = cap.read()
@@ -148,6 +150,13 @@ def detect(Source):
                    print('Try to find match. Took %.03f sec.' % t.interval)
                    total_time += t.interval
                    long_detecting_cnt += 1
+        elif isCameraInput is False:
+            ext = True
+        else:
+            print("No frame retrieved, do you wish to continue?Y/N")
+            pressed = input() # waitKey не хочет ждать поэтому юзаю стандартный ввод питона
+            if ((pressed == 'N') or (pressed == 'n')):
+                ext = True
 
         pressed = cv2.waitKey(70) & 0xFF
         if ((pressed == ord('q')) or (pressed == ord('Q'))):
@@ -155,8 +164,9 @@ def detect(Source):
 
             #TODO - обработка нажатий клавиатуры
             
-
-    print("Total tries  %.i" % long_detecting_cnt)
-    print("Average time %.03f" % (total_time/long_detecting_cnt))
+    if long_detecting_cnt != 0:
+        print("Total tries  %.i" % long_detecting_cnt)
+        print("Average time %.03f" % (total_time/long_detecting_cnt))
+    
     cap.release()
     cv2.destroyAllWindows()
