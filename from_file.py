@@ -1,3 +1,3 @@
 import ad_finder
 
-ad_finder.detect('videos/cola.mp4')
+ad_finder.detect('videos/demo.MOV')

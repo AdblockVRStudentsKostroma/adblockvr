@@ -11,6 +11,8 @@ seeds = [] # массив ключевых точек и дескрипторо�
 detector = cv2.xfeatures2d.SIFT_create(1000) # инициализируем класс поиска ключевых точек
 matcher = cv2.BFMatcher() # поиск соответствия по брутфорс перебору
 width, height = 1280, 720
+fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+out = cv2.VideoWriter('output.avi', fourcc, 20.0, (1280, 720))
 
 # вспомогательный класс таймера, для подсчета сколько времени заняла нужная операция
 class Timer:    
@@ -110,6 +112,7 @@ def explore_match(win, img2, ads):
     cv2.putText(img2, 'Press Q to EXIT', (10,20), font, 0.75, (255,0,0), 2, cv2.LINE_AA)
     cv2.putText(img2, 'Press C to add AD', (10,50), font, 0.75, (255,0,0), 2, cv2.LINE_AA)# кнопки для выхода
     cv2.imshow(win, img2)
+    out.write(img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
 #def mark_ad
@@ -187,10 +190,10 @@ def detect(Source):
     while (not ext):
         ret, frame = cap.read()
         if (ret is not None) and (frame is not None):
-            with Timer() as t:
-                if count % 8 == 0: # т.к. detectAndCompute очень тяжелая, то делаем ее реже
-                    kp2, desc2 = detector.detectAndCompute(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY), None)
-                    kdi = find_match(kp2, desc2)
+            #with Timer() as t:
+                #if count % 8 == 0: # т.к. detectAndCompute очень тяжелая, то делаем ее реже
+            kp2, desc2 = detector.detectAndCompute(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY), None)
+            kdi = find_match(kp2, desc2)
 
             if desc2 is not None:
                 match_and_draw('AdBlockVR', kdi, frame, kp2, desc2)
@@ -225,3 +228,4 @@ def detect(Source):
     
     cap.release()
     cv2.destroyAllWindows()
+    out.release()
