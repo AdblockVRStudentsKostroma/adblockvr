@@ -10,9 +10,9 @@ imgs = [] # картинки с рекламой, которые нам надо
 seeds = [] # массив ключевых точек и дескрипторов
 detector = cv2.xfeatures2d.SIFT_create(1000) # инициализируем класс поиска ключевых точек
 matcher = cv2.BFMatcher() # поиск соответствия по брутфорс перебору
-width, height = 1280, 720
-fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (1280, 720))
+width, height = 800, 600
+#fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+#out = cv2.VideoWriter('output.avi', fourcc, 20.0, (1280, 720))
 
 # вспомогательный класс таймера, для подсчета сколько времени заняла нужная операция
 class Timer:    
@@ -109,10 +109,10 @@ def explore_match(win, img2, ads):
     cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE) # запрет изменять размер окна
     cv2.resizeWindow(win, width, height) # задание размера окна
     font = cv2.FONT_HERSHEY_SIMPLEX # шрифт текста
-    cv2.putText(img2, 'Press Q to EXIT', (10,20), font, 0.75, (255,0,0), 2, cv2.LINE_AA)
-    cv2.putText(img2, 'Press C to add AD', (10,50), font, 0.75, (255,0,0), 2, cv2.LINE_AA)# кнопки для выхода
+    cv2.putText(img2, 'Press Q to exit', (10,20), font, 0.75, (255,0,0), 2, cv2.LINE_AA)
+    cv2.putText(img2, 'Press C to point advertisement', (10,50), font, 0.75, (255,0,0), 2, cv2.LINE_AA)# кнопки для выхода
     cv2.imshow(win, img2)
-    out.write(img2)
+    #out.write(img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
 #def mark_ad
@@ -158,8 +158,8 @@ def match_and_draw(win, kdi, img2, kp2, desc2):
 def detect(Source):
     
     epsilon = 0.001
-    #long_detecting_cnt = 0
-    #total_time = 0
+    long_detecting_cnt = 0
+    total_time = 0
 
     fullpath = os.getcwd() + '\\images' # полный путь к директории с рекламой
     names_img = os.listdir(fullpath) # список файлов и папок в каталоге с рекламой
@@ -190,27 +190,27 @@ def detect(Source):
     while (not ext):
         ret, frame = cap.read()
         if (ret is not None) and (frame is not None):
-            #with Timer() as t:
-                #if count % 8 == 0: # т.к. detectAndCompute очень тяжелая, то делаем ее реже
-            kp2, desc2 = detector.detectAndCompute(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY), None)
-            kdi = find_match(kp2, desc2)
+            with Timer() as t:
+                if count % 8 == 0: # т.к. detectAndCompute очень тяжелая, то делаем ее реже
+                    kp2, desc2 = detector.detectAndCompute(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY), None)
+                    kdi = find_match(kp2, desc2)
 
             if desc2 is not None:
                 match_and_draw('AdBlockVR', kdi, frame, kp2, desc2)
                 count += 1
-                #if t.interval>=epsilon:
-                   #print('Try to find match. Took %.03f sec.' % t.interval)
-                   #total_time += t.interval
-                   #long_detecting_cnt += 1
+                if t.interval>=epsilon:
+                   print('Try to find match. Took %.03f sec.' % t.interval)
+                   total_time += t.interval
+                   long_detecting_cnt += 1
         elif isCameraInput is False:
             ext = True
         else:
-            #print("No frame retrieved, do you wish to continue?Y/N")
+            print("No frame retrieved, do you wish to continue?Y/N")
             pressed = input() # waitKey не хочет ждать поэтому юзаю стандартный ввод питона
             if ((pressed == 'N') or (pressed == 'n')):
                 ext = True
 
-        pressed = cv2.waitKey(35) & 0xFF
+        pressed = cv2.waitKey(10) & 0xFF
         if ((pressed == ord('q')) or (pressed == ord('Q'))):
             ext = True
         elif ((pressed == ord('c')) or (pressed == ord('C'))):
@@ -222,10 +222,10 @@ def detect(Source):
 
             #TODO - обработка нажатий клавиатуры
             
-    #if long_detecting_cnt != 0:
-        #print("Total tries  %.i" % long_detecting_cnt)
-        #print("Average time %.03f" % (total_time/long_detecting_cnt))
+    if long_detecting_cnt != 0:
+        print("Total tries  %.i" % long_detecting_cnt)
+        print("Average time %.03f" % (total_time/long_detecting_cnt))
     
     cap.release()
     cv2.destroyAllWindows()
-    out.release()
+    #out.release()
