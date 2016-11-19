@@ -163,7 +163,8 @@ def detect(Source):
         img_path = os.path.join(fullpath, name) # полный путь до файлов и папок в каталоге с рекламой
         if os.path.isfile(img_path): # определение, является ли файлом
             imgs.append(cv2.imread(img_path, 0)) # добавление изображений с рекламой в массив
-    
+
+    print('''Loading advertisement's images''')
     for i in imgs:
         k, d = detector.detectAndCompute(i, None)
         seeds.append((k,d))
