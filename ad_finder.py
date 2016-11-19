@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import os
 import numpy as np
 import cv2
 import time
@@ -108,8 +109,13 @@ def detect(Source):
     long_detecting_cnt = 0
     total_time = 0
 
-    #TODO  - чтение картинок - образов рекламы в img[] - автоматизированно
-    imgs.append(cv2.imread("images/cola.jpg", 0))
+    fullpath = os.getcwd() + '\\images'
+    names_img = os.listdir(fullpath)
+    for name in names_img:
+        img_path = os.path.join(fullpath, name)
+        if os.path.isfile(img_path):
+            imgs.append(cv2.imread(img_path, 0))
+    #imgs.append(cv2.imread("images/cola.jpg", 0))
     
     for i in imgs:
         k, d = detector.detectAndCompute(i, None)
