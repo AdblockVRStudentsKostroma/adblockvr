@@ -44,9 +44,30 @@ def filter_matches(kp1, kp2, matches, ratio = 0.65):
     return p1, p2, kp_pairs
 
 
-# TODO - Bool функция определения определен шум или нет
-def is_noise():
-    return False
+# Функция определения определен шум или нет, roi_corners - точки, w - ширина, h - высота
+# coeff0 - процент минимального расстояния
+# coeff1 - процент максимального расстояния
+# coeff2 - процент максимального отношения сторон
+def is_noise(roi_corners, w,h, coeff0, coeff1,coeff2):
+
+    diag = w*w+h*h
+    minSize=diag*coeff0
+    maxSize=diag*coeff1
+    minLen=1000000000
+    maxLen=0
+    delta=0
+    for i in range(0,2):
+        for j in range(i+1,3):
+            xDiff = abs(roi_corners[i][0]-roi_corners[j][0])
+            yDiff = abs(roi_corners[i][1]-roi_corners[j][1])
+            len = xDiff*xDiff+yDiff*yDiff
+            minLen = min(minLen, len)
+            maxLen = max(minLen, len)
+    delta = maxLen/minLen
+    result = (minLen>minSize) and (maxLen<maxSize) and (delta<coeff2)
+    #print("min:", minLen, ", max:", maxLen, ", delta:", delta)
+    return not result
+
 
 ##############################################################################################
 # обработка найденной реклама на картинке делается здесь
@@ -62,14 +83,16 @@ def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
             (corners[1][0],corners[1][1]), 
             (corners[2][0],corners[2][1]), 
             (corners[3][0], corners[3][1])]], dtype=np.int32)
-        if not is_noise():
+        if not is_noise(roi_corners[0],h1,w1, 0.01, 0.9, 5.0):
             white = (255, 255, 255)
             cv2.fillPoly(mask, roi_corners, white)
 
             # apply the mask
             masked_image = cv2.bitwise_and(img2, mask)
-
-            blurred_image = cv2.boxFilter(img2, -1, (27, 27))
+            #########################
+            ## blurred_image = cv2.boxFilter(img2, -1, (27, 27)) - убирает контуры
+            #########################
+            blurred_image = cv2.boxFilter(masked_image, -1, (27, 27))
             img2 = img2 + (cv2.bitwise_and((blurred_image-img2), mask))
 
     # view params
