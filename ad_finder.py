@@ -9,6 +9,7 @@ imgs = [] # картинки с рекламой, которые нам надо
 seeds = [] # массив ключевых точек и дескрипторов
 detector = cv2.xfeatures2d.SIFT_create(1000) # инициализируем класс поиска ключевых точек
 matcher = cv2.BFMatcher() # поиск соответствия по брутфорс перебору
+width, height = 1280, 720
 
 # вспомогательный класс таймера, для подсчета сколько времени заняла нужная операция
 class Timer:    
@@ -44,10 +45,30 @@ def filter_matches(kp1, kp2, matches, ratio = 0.65):
     return p1, p2, kp_pairs
 
 
-# TODO - Bool функция определения определен шум или нет
-def is_noise(corners):
-    diff = []
-    return False
+# Функция определения определен шум или нет, roi_corners - точки, w - ширина, h - высота
+# coeff0 - процент минимального расстояния
+# coeff1 - процент максимального расстояния
+# coeff2 - процент максимального отношения сторон
+def is_noise(roi_corners, w,h, coeff0, coeff1,coeff2):
+
+    diag = w*w+h*h
+    minSize=diag*coeff0
+    maxSize=diag*coeff1
+    minLen=1000000000
+    maxLen=0
+    delta=0
+    for i in range(0,2):
+        for j in range(i+1,3):
+            xDiff = abs(roi_corners[i][0]-roi_corners[j][0])
+            yDiff = abs(roi_corners[i][1]-roi_corners[j][1])
+            len = xDiff*xDiff+yDiff*yDiff
+            minLen = min(minLen, len)
+            maxLen = max(minLen, len)
+    delta = maxLen/minLen
+    result = (minLen>minSize) and (maxLen<maxSize) and (delta<coeff2)
+    #print("min:", minLen, ", max:", maxLen, ", delta:", delta)
+    return not result
+
 
 ##############################################################################################
 # обработка найденной реклама на картинке делается здесь
@@ -64,23 +85,29 @@ def explore_match(win, img2, ads):
                 (corners[1][0],corners[1][1]), 
                 (corners[2][0],corners[2][1]), 
                 (corners[3][0], corners[3][1])]], dtype=np.int32)
-            if not is_noise(roi_corners):
+            if not is_noise(roi_corners[0],h1,w1, 0.0000001, 0.9, 5.0):
                 white = (255, 255, 255)
                 cv2.fillPoly(mask, roi_corners, white)
     
     # apply the mask
     masked_image = cv2.bitwise_and(img2, mask)
 
-    blurred_image = cv2.boxFilter(img2, -1, (27, 27))
+    #########################
+    ## blurred_image = cv2.boxFilter(img2, -1, (27, 27)) - убирает контуры
+    #########################
+    blurred_image = cv2.boxFilter(masked_image, -1, (27, 27))
     img2 = img2 + (cv2.bitwise_and((blurred_image-img2), mask))
 
     # view params
-    width, height = 960, 540
     x_offset = 0
     y_offset = 0
 #TODO: Отрисовать UI
-    cv2.namedWindow(win, cv2.WND_PROP_FULLSCREEN)
-    cv2.setWindowProperty(win, cv2.WND_PROP_AUTOSIZE, cv2.WINDOW_AUTOSIZE)
+    height, width = img2.shape[:2]
+
+    cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE) # запрет изменять размер окна
+    cv2.resizeWindow(win, width, height) # задание размера окна
+    font = cv2.FONT_HERSHEY_SIMPLEX # шрифт текста
+    cv2.putText(img2, 'Press Q to EXIT', (10,40), font, 1, (255,255,255), 2, cv2.LINE_AA) # кнопка для выхода
     cv2.imshow(win, img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
@@ -153,8 +180,8 @@ def detect(Source):
     count = 0
     ext = False
     
-    cap.set(3,960)
-    cap.set(4,540)
+    cap.set(3,width)
+    cap.set(4,height)
     
     while (not ext):
         ret, frame = cap.read()
