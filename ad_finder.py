@@ -69,7 +69,8 @@ def is_noise(roi_corners, w,h, coeff0, coeff1,coeff2):
     result = (minLen>minSize) and (maxLen<maxSize) and (delta<coeff2)
     return not result
 
-
+def nothing():
+    pass
 ##############################################################################################
 # обработка найденной реклама на картинке делается здесь
 def explore_match(win, img2, ads):
@@ -85,7 +86,7 @@ def explore_match(win, img2, ads):
                 (corners[1][0],corners[1][1]), 
                 (corners[2][0],corners[2][1]), 
                 (corners[3][0], corners[3][1])]], dtype=np.int32)
-            if not is_noise(roi_corners[0],h1,w1, 0.0001, 0.9, 3.0) and cv2.isContourConvex(roi_corners):
+            if not is_noise(roi_corners[0],h2,w2, 0.000002, 0.2, 2.0) and cv2.isContourConvex(roi_corners):
                 white = (255, 255, 255)
                 cv2.fillConvexPoly(mask, roi_corners, white)
     
@@ -103,7 +104,7 @@ def explore_match(win, img2, ads):
     y_offset = 0
 #TODO: Отрисовать UI
     height, width = img2.shape[:2]
-
+    
     cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE) # запрет изменять размер окна
     cv2.resizeWindow(win, width, height) # задание размера окна
     font = cv2.FONT_HERSHEY_SIMPLEX # шрифт текста
