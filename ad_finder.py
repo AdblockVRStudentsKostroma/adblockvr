@@ -4,6 +4,7 @@ import os
 import numpy as np
 import cv2
 import time
+import image_cutter as im_cut
 
 imgs = [] # картинки с рекламой, которые нам надо вырезать
 seeds = [] # массив ключевых точек и дескрипторов
@@ -59,14 +60,13 @@ def is_noise(roi_corners, w,h, coeff0, coeff1,coeff2):
     delta=0
     for i in range(0,2):
         for j in range(i+1,3):
-            xDiff = abs(roi_corners[i][0]-roi_corners[j][0])
-            yDiff = abs(roi_corners[i][1]-roi_corners[j][1])
+            xDiff = min(abs(roi_corners[i][0]-roi_corners[j][0]),diag+100)
+            yDiff = min(abs(roi_corners[i][1]-roi_corners[j][1]),diag+100)
             len = xDiff*xDiff+yDiff*yDiff
             minLen = min(minLen, len)
             maxLen = max(minLen, len)
-    delta = maxLen/minLen
+    delta = maxLen/(minLen+0.00001)
     result = (minLen>minSize) and (maxLen<maxSize) and (delta<coeff2)
-    #print("min:", minLen, ", max:", maxLen, ", delta:", delta)
     return not result
 
 
@@ -85,9 +85,9 @@ def explore_match(win, img2, ads):
                 (corners[1][0],corners[1][1]), 
                 (corners[2][0],corners[2][1]), 
                 (corners[3][0], corners[3][1])]], dtype=np.int32)
-            if not is_noise(roi_corners[0],h1,w1, 0.0000001, 0.9, 5.0):
+            if not is_noise(roi_corners[0],h1,w1, 0.0001, 0.9, 3.0) and cv2.isContourConvex(roi_corners):
                 white = (255, 255, 255)
-                cv2.fillPoly(mask, roi_corners, white)
+                cv2.fillConvexPoly(mask, roi_corners, white)
     
     # apply the mask
     masked_image = cv2.bitwise_and(img2, mask)
@@ -95,7 +95,7 @@ def explore_match(win, img2, ads):
     #########################
     ## blurred_image = cv2.boxFilter(img2, -1, (27, 27)) - убирает контуры
     #########################
-    blurred_image = cv2.boxFilter(masked_image, -1, (27, 27))
+    blurred_image = cv2.boxFilter(img2, -1, (27, 27))
     img2 = img2 + (cv2.bitwise_and((blurred_image-img2), mask))
 
     # view params
@@ -107,7 +107,8 @@ def explore_match(win, img2, ads):
     cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE) # запрет изменять размер окна
     cv2.resizeWindow(win, width, height) # задание размера окна
     font = cv2.FONT_HERSHEY_SIMPLEX # шрифт текста
-    cv2.putText(img2, 'Press Q to EXIT', (10,40), font, 1, (255,255,255), 2, cv2.LINE_AA) # кнопка для выхода
+    cv2.putText(img2, 'Press Q to EXIT', (10,20), font, 0.75, (255,0,0), 2, cv2.LINE_AA)
+    cv2.putText(img2, 'Press C to add AD', (10,50), font, 0.75, (255,0,0), 2, cv2.LINE_AA)# кнопки для выхода
     cv2.imshow(win, img2)
 
 #TODO - функция снятия фрагмента изображения с экрана и пометки как рекламы
@@ -121,8 +122,7 @@ def find_match(kp, desc):
         #поиск лучших соответствий
         raw_matches = matcher.knnMatch(desc, trainDescriptors = seed[1], k = 2)
         p1, p2, kp_pairs = filter_matches(kp, seed[0], raw_matches)
-        print(len(p1), len(seed[0]), len(p1) > len(seed[0])*0.05)
-        if len(p1) > len(seed[0])*0.05:
+        if len(p1) > len(seed[0])*0.025: #Процент точности
             result.append((seed, imgs[i]))
     return result
         
@@ -155,8 +155,8 @@ def match_and_draw(win, kdi, img2, kp2, desc2):
 def detect(Source):
     
     epsilon = 0.001
-    long_detecting_cnt = 0
-    total_time = 0
+    #long_detecting_cnt = 0
+    #total_time = 0
 
     fullpath = os.getcwd() + '\\images' # полный путь к директории с рекламой
     names_img = os.listdir(fullpath) # список файлов и папок в каталоге с рекламой
@@ -195,14 +195,14 @@ def detect(Source):
             if desc2 is not None:
                 match_and_draw('AdBlockVR', kdi, frame, kp2, desc2)
                 count += 1
-                if t.interval>=epsilon:
-                   print('Try to find match. Took %.03f sec.' % t.interval)
-                   total_time += t.interval
-                   long_detecting_cnt += 1
+                #if t.interval>=epsilon:
+                   #print('Try to find match. Took %.03f sec.' % t.interval)
+                   #total_time += t.interval
+                   #long_detecting_cnt += 1
         elif isCameraInput is False:
             ext = True
         else:
-            print("No frame retrieved, do you wish to continue?Y/N")
+            #print("No frame retrieved, do you wish to continue?Y/N")
             pressed = input() # waitKey не хочет ждать поэтому юзаю стандартный ввод питона
             if ((pressed == 'N') or (pressed == 'n')):
                 ext = True
@@ -210,12 +210,18 @@ def detect(Source):
         pressed = cv2.waitKey(35) & 0xFF
         if ((pressed == ord('q')) or (pressed == ord('Q'))):
             ext = True
+        elif ((pressed == ord('c')) or (pressed == ord('C'))):
+            new_img_fname = im_cut.cut_image(frame)
+            if new_img_fname is not None:
+                imgs.append(cv2.imread(new_img_fname))
+                k, d = detector.detectAndCompute(cv2.cvtColor(imgs[-1],cv2.COLOR_BGR2GRAY), None)
+                seeds.append((k,d))
 
             #TODO - обработка нажатий клавиатуры
             
-    if long_detecting_cnt != 0:
-        print("Total tries  %.i" % long_detecting_cnt)
-        print("Average time %.03f" % (total_time/long_detecting_cnt))
+    #if long_detecting_cnt != 0:
+        #print("Total tries  %.i" % long_detecting_cnt)
+        #print("Average time %.03f" % (total_time/long_detecting_cnt))
     
     cap.release()
     cv2.destroyAllWindows()
