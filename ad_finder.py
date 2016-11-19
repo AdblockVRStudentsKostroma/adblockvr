@@ -45,12 +45,34 @@ def filter_matches(kp1, kp2, matches, ratio = 0.65):
 
 
 # TODO - Bool функция определения определен шум или нет
-#def remove_noise
+def is_noise():
+    return False
 
 ##############################################################################################
 # обработка найденной реклама на картинке делается здесь
 def explore_match(win, img1, img2, kp_pairs, status = None, H = None):
-    # TODO - блур рекламы на видеопотоке
+    if (img1 is not None) and (img2 is not None):
+        h1, w1 = img1.shape[:2]
+        h2, w2 = img2.shape[:2]
+    if (H is not None):
+        corners = np.float32([[0, 0], [w1, 0], [w1, h1], [0, h1]])
+        corners = np.int32( cv2.perspectiveTransform(corners.reshape(1, -1, 2), H).reshape(-1, 2))
+        mask = np.zeros(img2.shape, dtype=np.uint8)
+        roi_corners = np.array([[(corners[0][0],corners[0][1]), 
+            (corners[1][0],corners[1][1]), 
+            (corners[2][0],corners[2][1]), 
+            (corners[3][0], corners[3][1])]], dtype=np.int32)
+        if not is_noise():
+            white = (255, 255, 255)
+            cv2.fillPoly(mask, roi_corners, white)
+
+            # apply the mask
+            masked_image = cv2.bitwise_and(img2, mask)
+
+            blurred_image = cv2.boxFilter(img2, -1, (27, 27))
+            img2 = img2 + (cv2.bitwise_and((blurred_image-img2), mask))
+
+    # view params
     width, height = 960, 540
     x_offset = 0
     y_offset = 0
